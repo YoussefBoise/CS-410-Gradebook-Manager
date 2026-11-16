@@ -44,7 +44,34 @@ public class GradebookCommands {
 
     // Lists all classes.
     public void listClasses() throws SQLException {
-        throw new IllegalStateException("list-classes not implemented yet.");
+        RowSet output;
+        try (PreparedStatement newClassStatement = con.prepareStatement(
+                "SELECT C.course_number, C.term, C.section_number, C.class_description, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id GROUP BY C.term ASC, C.course_number ASC;"
+        )) {
+            output = newClassStatement.executeQuery();
+            // Print output
+            while(output.next()){
+                String courseNumber = output.getString("course_number");
+                String term = output.getString("term");
+                String section = output.getString("section_number");
+                String description = output.getString("class_description");
+                int numStudents = output.getInt("num_students");
+
+                // Output styling
+                System.out.println(courseNumber + " | " + term + " | " + section + " | " + description + " | " + numStudents);
+            }
+        } catch (SQLException e) {
+            System.err.println(e);
+            System.out.println("Failed to list classes");
+            if (con != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    con.rollback();
+                } catch (SQLException excep) {
+                    System.out.println(e + "\nTransaction Rollback Failed");
+                }
+            }
+        }
     }
 
     // Selects the active class.

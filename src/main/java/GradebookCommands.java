@@ -59,8 +59,7 @@ public class GradebookCommands {
                 String description = output.getString("class_description");
                 int numStudents = output.getInt("num_students");
 
-                // Output styling
-                System.out.println(courseNumber + " | " + term + " | " + section + " | " + description + " | " + numStudents);
+                printTable([course_number, term, section, description, String.valueOf(num_students)], 5);
             }
         } catch (SQLException e) {
             System.err.println(e);
@@ -110,8 +109,7 @@ public class GradebookCommands {
                             String term = output.getString("term");
                             String section = output.getString("section_number");
 
-                            // Output styling
-                            System.out.println(courseNumber + " | " + term + " | " + section);
+                            printTable([course_number, term, section], 3);
                         }
                     } else {
                         activeClassId = output.getInt("class_id");
@@ -140,8 +138,7 @@ public class GradebookCommands {
                 String section = output.getString("section_number");
                 int numStudents = output.getInt("num_students");
 
-                // Output styling
-                System.out.println(courseNumber + " | " + term + " | " + section + " | " + num_students);
+                printTable([course_number, term, section, String.valueOf(num_students)], 4);
             } catch (SQLException e) {
                 System.err.println(e);
                 System.out.println("Failed to show class");
@@ -173,5 +170,15 @@ public class GradebookCommands {
         }
 
         return activeClassId;
+    }
+
+    // Stylizes the table output
+    private void printTable(String[] args, int numArgs) {
+        for (int i = 0; i < numArgs; i++) {
+            if (i) {
+                System.out.print(" | ");
+            }
+            System.out.print(args[i]);
+        }
     }
 }

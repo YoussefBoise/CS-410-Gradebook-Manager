@@ -28,9 +28,11 @@ public class GradebookCommands {
             newClassStatement.setString(2, term);
             newClassStatement.setString(3, section);
             newClassStatement.setString(4, description);
+            newClassStatement.executeUpdate()
             con.commit()
         } catch (SQLException e) {
-            System.out.println(e);
+            System.err.println(e);
+            System.out.println("Failed to create new class")
             if (con != null) {
                 try {
                     System.err.print("Transaction is being rolled back");

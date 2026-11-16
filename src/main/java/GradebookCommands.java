@@ -78,7 +78,52 @@ public class GradebookCommands {
 
     // Selects the active class.
     public void selectClass(List<String> args) throws SQLException {
-        throw new IllegalStateException("select-class not implemented yet.");
+        String courseName = args.get(0);
+        String term = null;
+        String section = null;
+        try { term = args.get(1); } catch (IndexOutOfBoundsException e) {}
+        try { section = args.get(2); } catch (IndexOutOfBoundsException e) {}
+
+        try (PreparedStatement selectClassStatement = connection.prepareStatement(
+                "SELECT class_id, course_number, term, section_number FROM classes WHERE course_name = ???"
+        )) {
+                connection.setAutoCommit(false);
+                selectClassStatement.setString(1, courseName);
+                if (term) {
+                    selectClassStatement.setString(2, ", term = " + term);
+                } else {
+                    selectClassStatement.setString(2, "");
+                }
+                if (section) {
+                    selectClassStatement.setString(3, ", section_number = " + section);
+                } else {
+                    selectClassStatement.setString(3, "");
+                }
+                RowSet output = selectClassStatement.executeQuery();
+                if (output.last()) {
+                    if (output.getRow() > 1) {
+                        System.out.println("Failed to select class. Multiple classes match the given criteria:");
+                        output.first();
+                        // Print output
+                        while(output.next()){
+                            String courseNumber = output.getString("course_number");
+                            String term = output.getString("term");
+                            String section = output.getString("section_number");
+                            int numStudents = output.getInt("num_students");
+
+                            // Output styling
+                            System.out.println(courseNumber + " | " + term + " | " + section);
+                        }
+                    } else {
+                        activeClassId = output.getInt("class_id");
+                    }
+                }
+                connection.commit()
+            }
+        } catch (SQLException e) {
+            System.err.println(e);
+            System.out.println("Failed to list classes");
+        }
     }
 
     // Displays the active class.

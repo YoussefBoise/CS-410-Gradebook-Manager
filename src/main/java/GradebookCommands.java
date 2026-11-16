@@ -180,5 +180,6 @@ public class GradebookCommands {
             }
             System.out.print(args[i]);
         }
+        System.out.println();
     }
 }

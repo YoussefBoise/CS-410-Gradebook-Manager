@@ -20,23 +20,23 @@ public class GradebookCommands {
         section = args.get(2);
         description = args.get(3);
 
-        try (PreparedStatement newClassStatement = con.prepareStatement(
+        try (PreparedStatement newClassStatement = connection.prepareStatement(
                 "insert into classes (course_number, term, section_number, class_description) values (?, ?, ?, ?);"
         )) {
-            con.setAutoCommit(false);
+            connection.setAutoCommit(false);
             newClassStatement.setString(1, courseName);
             newClassStatement.setString(2, term);
             newClassStatement.setString(3, section);
             newClassStatement.setString(4, description);
             newClassStatement.executeUpdate()
-            con.commit()
+            connection.commit()
         } catch (SQLException e) {
             System.err.println(e);
             System.out.println("Failed to create new class")
-            if (con != null) {
+            if (connection != null) {
                 try {
                     System.err.print("Transaction is being rolled back");
-                    con.rollback();
+                    connection.rollback();
                 } catch (SQLException excep) {
                     System.out.println(e + "\nTransaction Rollback Failed");
                 }
@@ -47,7 +47,7 @@ public class GradebookCommands {
     // Lists all classes.
     public void listClasses() throws SQLException {
         RowSet output;
-        try (PreparedStatement newClassStatement = con.prepareStatement(
+        try (PreparedStatement newClassStatement = connection.prepareStatement(
                 "SELECT C.course_number, C.term, C.section_number, C.class_description, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id GROUP BY C.term ASC, C.course_number ASC;"
         )) {
             output = newClassStatement.executeQuery();
@@ -65,10 +65,10 @@ public class GradebookCommands {
         } catch (SQLException e) {
             System.err.println(e);
             System.out.println("Failed to list classes");
-            if (con != null) {
+            if (connection != null) {
                 try {
                     System.err.print("Transaction is being rolled back");
-                    con.rollback();
+                    connection.rollback();
                 } catch (SQLException excep) {
                     System.out.println(e + "\nTransaction Rollback Failed");
                 }

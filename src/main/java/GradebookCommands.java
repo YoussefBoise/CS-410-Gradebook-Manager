@@ -109,7 +109,6 @@ public class GradebookCommands {
                             String courseNumber = output.getString("course_number");
                             String term = output.getString("term");
                             String section = output.getString("section_number");
-                            int numStudents = output.getInt("num_students");
 
                             // Output styling
                             System.out.println(courseNumber + " | " + term + " | " + section);

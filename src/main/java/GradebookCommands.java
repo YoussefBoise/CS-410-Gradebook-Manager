@@ -15,10 +15,10 @@ public class GradebookCommands {
 
     // Creates a new class.
     public void newClass(List<String> args) throws SQLException {
-        courseName = args.get(0);
-        term = args.get(1);
-        section = args.get(2);
-        description = args.get(3);
+        String courseName = args.get(0);
+        String term = args.get(1);
+        String section = args.get(2);
+        String description = args.get(3);
 
         try (PreparedStatement newClassStatement = connection.prepareStatement(
                 "insert into classes (course_number, term, section_number, class_description) values (?, ?, ?, ?);"

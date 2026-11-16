@@ -128,7 +128,28 @@ public class GradebookCommands {
 
     // Displays the active class.
     public void showClass() throws SQLException {
-        throw new IllegalStateException("show-class not implemented yet.");
+        try {
+            int selectedClass = requireActiveClass();
+            try (PreparedStatement showClassStatement = connection.prepareStatement(
+                    "SELECT C.course_number, C.term, C.section_number, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id WHERE C.class_id = ?;"
+            )) {
+                showClassStatement.setInt(1, selectedClass);
+                RowSet output = showClassStatement.executeQuery();
+
+                String courseNumber = output.getString("course_number");
+                String term = output.getString("term");
+                String section = output.getString("section_number");
+                int numStudents = output.getInt("num_students");
+
+                // Output styling
+                System.out.println(courseNumber + " | " + term + " | " + section + " | " + num_students);
+            } catch (SQLException e) {
+                System.err.println(e);
+                System.out.println("Failed to show class");
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(e);
+        }
     }
 
     // Adds a grading category.

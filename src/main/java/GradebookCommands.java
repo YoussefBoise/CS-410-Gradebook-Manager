@@ -1,5 +1,6 @@
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.util.List;
 
 public class GradebookCommands {
@@ -14,7 +15,31 @@ public class GradebookCommands {
 
     // Creates a new class.
     public void newClass(List<String> args) throws SQLException {
-        throw new IllegalStateException("new-class not implemented yet.");
+        courseName = args.get(0);
+        term = args.get(1);
+        section = args.get(2);
+        description = args.get(3);
+
+        try (PreparedStatement newClassStatement = con.prepareStatement(
+                "insert into classes (course_number, term, section_number, class_description) values (?, ?, ?, ?);"
+        )) {
+            con.setAutoCommit(false);
+            newClassStatement.setString(1, courseName);
+            newClassStatement.setString(2, term);
+            newClassStatement.setString(3, section);
+            newClassStatement.setString(4, description);
+            con.commit()
+        } catch (SQLException e) {
+            System.out.println(e);
+            if (con != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    con.rollback();
+                } catch (SQLException excep) {
+                    System.out.println(e + "\nTransaction Rollback Failed");
+                }
+            }
+        }
     }
 
     // Lists all classes.

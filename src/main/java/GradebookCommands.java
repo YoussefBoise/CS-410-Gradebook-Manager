@@ -271,7 +271,7 @@ public class GradebookCommands {
                     String description = output.getString("assignment_description");
                     int points = output.getInt("points");
                     int summedPoints = output.getInt("summed_points");
-                    String category = output.getString("category_type")
+                    String category = output.getString("category_type");
 
                     String[] row = {name, description, String.valueOf(points), category, String.valueOf(summedPoints)};
                     printRow(row);

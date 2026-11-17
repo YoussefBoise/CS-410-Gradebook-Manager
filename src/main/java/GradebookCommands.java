@@ -3,6 +3,7 @@ import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+import java.text.DecimalFormat;
 
 public class GradebookCommands {
 
@@ -188,6 +189,34 @@ public class GradebookCommands {
                     System.out.println(e + "\nTransaction Rollback Failed");
                 }
             }
+        }
+    }
+
+    // Shows the classes categories with weights and rescaled percentage
+    public void showCategories() throws SQLException {
+        try {
+            int selectedClass = requireActiveClass();
+            try (PreparedStatement showCategoriesStatement = connection.prepareStatement(
+                    "SELECT category_type, category_weight, SUM(category_weight) AS summed_weight FROM categories WHERE class_id = ?;"
+            )) {
+                showCategoriesStatement.setInt(1, selectedClass);
+                ResultSet output = showClassStatement.executeQuery();
+
+                while (output.next()) {
+                    String type = output.getString("category_type");
+                    int weight = output.getInt("category_weight");
+                    int summedWeight = output.getInt("summed_weight");
+
+                    DecimalFormat df = new DecimalFormat("###.##");
+                    String[] row = {courseNumber, term, String.valueOf(weight), df.format(weight / summedWeight * 100) + "%"};
+                    printRow(row);
+                }
+            } catch (SQLException e) {
+                System.err.println(e);
+                System.out.println("Failed to show class categories");
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(e);
         }
     }
 

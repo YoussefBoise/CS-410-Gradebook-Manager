@@ -28,8 +28,8 @@ public class GradebookCommands {
             newClassStatement.setString(2, term);
             newClassStatement.setString(3, section);
             newClassStatement.setString(4, description);
-            newClassStatement.executeUpdate()
-            connection.commit()
+            newClassStatement.executeUpdate();
+            connection.commit();
         } catch (SQLException e) {
             System.err.println(e);
             System.out.println("Failed to create new class")

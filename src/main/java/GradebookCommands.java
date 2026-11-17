@@ -226,7 +226,73 @@ public class GradebookCommands {
 
     // Creates or enrolls a student.
     public void addStudent(List<String> args) throws SQLException {
-        throw new IllegalStateException("add-student not implemented yet.");
+        String name = args.get(0);
+        Integer id = null;
+        String last = null;
+        String first = null;
+        try {
+            id = Integer.valueOf(args.get(1));
+            last = args.get(2);
+            first = args.get(3);
+        } catch (IndexOutOfBoundsException e) {}
+
+        // if statement to seperate between the two different add-student behaviours
+        if (first) {
+            // add-student case where a new student is being created
+            try (PreparedStatement newStudentStatement = connection.prepareStatement(
+                    "insert into students (student_id, username, student_name) values (?, ?, ? ?);"
+            )) {
+                connection.setAutoCommit(false);
+                newStudentStatement.setString(1, name);
+                newStudentStatement.setInt(2, id);
+                newStudentStatement.setString(3, first);
+                newStudentStatement.setString(4, last);
+                newStudentStatement.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                System.out.println(e);
+                System.out.println("Failed to create new student")
+                if (connection != null) {
+                    try {
+                        System.err.print("Transaction is being rolled back");
+                        connection.rollback();
+                    } catch (SQLException excep) {
+                        System.out.println(e + "\nTransaction Rollback Failed");
+                    }
+                }
+            }
+        } else {
+            // add-student case where a student is added to a class
+            // Derive student_id from username
+            int id = -1;
+            PreparedStatement getId = connection.prepareStatement(
+                    "SELECT student_id FROM students WHERE username = ?"
+            )
+            getId.setString(1, name);
+            RowSet output = getId.executeQuery();
+            id = output.getInt("student_id");
+            // Enroll student
+            try (PreparedStatement newStudentStatement = connection.prepareStatement(
+                    "insert into enrollment (student_id, class_id) values (?, ?);"
+            )) {
+                connection.setAutoCommit(false);
+                newStudentStatement.setInt(1, id);
+                newStudentStatement.setInt(2, activeClassId);
+                newStudentStatement.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                System.out.println(e);
+                System.out.println("Failed to enroll student")
+                if (connection != null) {
+                    try {
+                        System.err.print("Transaction is being rolled back");
+                        connection.rollback();
+                    } catch (SQLException excep) {
+                        System.out.println(e + "\nTransaction Rollback Failed");
+                    }
+                }
+            }
+        }
     }
 
     // Checks whether a class is selected.

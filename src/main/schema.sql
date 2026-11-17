@@ -77,7 +77,7 @@ CREATE TABLE grades (
 CREATE INDEX idx_grade ON grades(assignment_grade); -- Allows queries for grades to be faster. Useful for grade analysis.
 CREATE INDEX idx_course_num ON classes(course_number); -- Allows queries to use course numbers instead of ids without slowing significantly.
 CREATE INDEX idx_student_name ON students(student_name); -- Allows queries based on names to be faster. Useful if student id is lost.
-CREATE INDEX idx_category_type ON categories(category_type) -- Allows queries based on category types to be faster. Useful if classes want to compare category weights.
+CREATE INDEX idx_category_type ON categories(category_type); -- Allows queries based on category types to be faster. Useful if classes want to compare category weights.
 
 DELIMITER |
 
@@ -85,11 +85,11 @@ CREATE TRIGGER check_assignment_belong_to_class
 BEFORE INSERT ON grades
 FOR EACH ROW
 BEGIN
-    DECLARE num_valid INT;
+    DECLARE num_valid INT DEFAULT 0;
 
     SELECT COUNT(*) INTO num_valid
     FROM enrollment E
-        JOIN assignment A on E.class_id = A.class_id;
+        JOIN assignments A on E.class_id = A.class_id;
 
     IF num_valid = 0 THEN
         SIGNAL SQLSTATE '45000'

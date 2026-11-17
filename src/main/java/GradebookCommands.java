@@ -1,6 +1,7 @@
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 public class GradebookCommands {
@@ -32,7 +33,7 @@ public class GradebookCommands {
             connection.commit();
         } catch (SQLException e) {
             System.err.println(e);
-            System.out.println("Failed to create new class")
+            System.out.println("Failed to create new class");
             if (connection != null) {
                 try {
                     System.err.print("Transaction is being rolled back");
@@ -46,7 +47,7 @@ public class GradebookCommands {
 
     // Lists all classes.
     public void listClasses() throws SQLException {
-        RowSet output;
+        ResultSet output;
         try (PreparedStatement newClassStatement = connection.prepareStatement(
                 "SELECT C.course_number, C.term, C.section_number, C.class_description, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id GROUP BY C.term ASC, C.course_number ASC;"
         )) {
@@ -59,7 +60,8 @@ public class GradebookCommands {
                 String description = output.getString("class_description");
                 int numStudents = output.getInt("num_students");
 
-                printTable([course_number, term, section, description, String.valueOf(num_students)], 5);
+                String[] row = {courseNumber, term, section, description, String.valueOf(numStudents)};
+                printRow(row);
             }
         } catch (SQLException e) {
             System.err.println(e);
@@ -86,37 +88,37 @@ public class GradebookCommands {
         try (PreparedStatement selectClassStatement = connection.prepareStatement(
                 "SELECT class_id, course_number, term, section_number FROM classes WHERE course_name = ???"
         )) {
-                connection.setAutoCommit(false);
-                selectClassStatement.setString(1, courseName);
-                if (term) {
-                    selectClassStatement.setString(2, ", term = " + term);
-                } else {
-                    selectClassStatement.setString(2, "");
-                }
-                if (section) {
-                    selectClassStatement.setString(3, ", section_number = " + section);
-                } else {
-                    selectClassStatement.setString(3, "");
-                }
-                RowSet output = selectClassStatement.executeQuery();
-                if (output.last()) {
-                    if (output.getRow() > 1) {
-                        System.out.println("Failed to select class. Multiple classes match the given criteria:");
-                        output.first();
-                        // Print output
-                        while(output.next()){
-                            String courseNumber = output.getString("course_number");
-                            String term = output.getString("term");
-                            String section = output.getString("section_number");
-
-                            printTable([course_number, term, section], 3);
-                        }
-                    } else {
-                        activeClassId = output.getInt("class_id");
-                    }
-                }
-                connection.commit()
+            connection.setAutoCommit(false);
+            selectClassStatement.setString(1, courseName);
+            if (term != null) {
+                selectClassStatement.setString(2, ", term = " + term);
+            } else {
+                selectClassStatement.setString(2, "");
             }
+            if (section != null) {
+                selectClassStatement.setString(3, ", section_number = " + section);
+            } else {
+                selectClassStatement.setString(3, "");
+            }
+            ResultSet output = selectClassStatement.executeQuery();
+            if (output.last()) {
+                if (output.getRow() > 1) {
+                    System.out.println("Failed to select class. Multiple classes match the given criteria:");
+                    output.first();
+                    // Print output
+                    while(output.next()){
+                        String outCourseNumber = output.getString("course_number");
+                        String outTerm = output.getString("term");
+                        String outSection = output.getString("section_number");
+
+                        String[] row = {outCourseNumber, outTerm, outSection};
+                        printRow(row);
+                    }
+                } else {
+                    activeClassId = output.getInt("class_id");
+                }
+            }
+            connection.commit();
         } catch (SQLException e) {
             System.err.println(e);
             System.out.println("Failed to list classes");
@@ -139,14 +141,15 @@ public class GradebookCommands {
                     "SELECT C.course_number, C.term, C.section_number, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id WHERE C.class_id = ?;"
             )) {
                 showClassStatement.setInt(1, selectedClass);
-                RowSet output = showClassStatement.executeQuery();
+                ResultSet output = showClassStatement.executeQuery();
 
                 String courseNumber = output.getString("course_number");
                 String term = output.getString("term");
                 String section = output.getString("section_number");
                 int numStudents = output.getInt("num_students");
 
-                printTable([course_number, term, section, String.valueOf(num_students)], 4);
+                String[] row = {courseNumber, term, section, String.valueOf(numStudents)};
+                printRow(row);
             } catch (SQLException e) {
                 System.err.println(e);
                 System.out.println("Failed to show class");
@@ -212,7 +215,7 @@ public class GradebookCommands {
             connection.commit();
         } catch (SQLException e) {
             System.out.println(e);
-            System.out.println("Failed to create new assignment")
+            System.out.println("Failed to create new assignment");
             if (connection != null) {
                 try {
                     System.err.print("Transaction is being rolled back");
@@ -237,7 +240,7 @@ public class GradebookCommands {
         } catch (IndexOutOfBoundsException e) {}
 
         // if statement to seperate between the two different add-student behaviours
-        if (first) {
+        if (first != null) {
             // add-student case where a new student is being created
             try (PreparedStatement newStudentStatement = connection.prepareStatement(
                     "insert into students (student_id, username, student_name) values (?, ?, ? ?);"
@@ -251,7 +254,7 @@ public class GradebookCommands {
                 connection.commit();
             } catch (SQLException e) {
                 System.out.println(e);
-                System.out.println("Failed to create new student")
+                System.out.println("Failed to create new student");
                 if (connection != null) {
                     try {
                         System.err.print("Transaction is being rolled back");
@@ -264,12 +267,11 @@ public class GradebookCommands {
         } else {
             // add-student case where a student is added to a class
             // Derive student_id from username
-            int id = -1;
             PreparedStatement getId = connection.prepareStatement(
                     "SELECT student_id FROM students WHERE username = ?"
-            )
+            );
             getId.setString(1, name);
-            RowSet output = getId.executeQuery();
+            ResultSet output = getId.executeQuery();
             id = output.getInt("student_id");
             // Enroll student
             try (PreparedStatement newStudentStatement = connection.prepareStatement(
@@ -282,7 +284,7 @@ public class GradebookCommands {
                 connection.commit();
             } catch (SQLException e) {
                 System.out.println(e);
-                System.out.println("Failed to enroll student")
+                System.out.println("Failed to enroll student");
                 if (connection != null) {
                     try {
                         System.err.print("Transaction is being rolled back");
@@ -305,9 +307,9 @@ public class GradebookCommands {
     }
 
     // Stylizes the table output
-    private void printTable(String[] args, int numArgs) {
-        for (int i = 0; i < numArgs; i++) {
-            if (i) {
+    private void printRow(String[] args) {
+        for (int i = 0; i < args.length; i++) {
+            if (i != 0) {
                 System.out.print(" | ");
             }
             System.out.print(args[i]);

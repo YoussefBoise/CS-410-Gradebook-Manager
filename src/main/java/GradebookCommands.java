@@ -120,6 +120,14 @@ public class GradebookCommands {
         } catch (SQLException e) {
             System.err.println(e);
             System.out.println("Failed to list classes");
+            if (connection != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    connection.rollback();
+                } catch (SQLException excep) {
+                    System.out.println(e + "\nTransaction Rollback Failed");
+                }
+            }
         }
     }
 

@@ -192,7 +192,7 @@ public class GradebookCommands {
         }
     }
 
-    // Shows the classes categories with weights and rescaled percentage
+    // Shows the active class' categories with weights and rescaled percentage
     public void showCategories() throws SQLException {
         try {
             int selectedClass = requireActiveClass();
@@ -200,7 +200,7 @@ public class GradebookCommands {
                     "SELECT category_type, category_weight, SUM(category_weight) AS summed_weight FROM categories WHERE class_id = ?;"
             )) {
                 showCategoriesStatement.setInt(1, selectedClass);
-                ResultSet output = showClassStatement.executeQuery();
+                ResultSet output = showCategoriesStatement.executeQuery();
 
                 while (output.next()) {
                     String type = output.getString("category_type");
@@ -208,7 +208,7 @@ public class GradebookCommands {
                     int summedWeight = output.getInt("summed_weight");
 
                     DecimalFormat df = new DecimalFormat("###.##");
-                    String[] row = {courseNumber, term, String.valueOf(weight), df.format(weight / summedWeight * 100) + "%"};
+                    String[] row = {type, String.valueOf(weight), df.format(weight / summedWeight * 100) + "%"};
                     printRow(row);
                 }
             } catch (SQLException e) {
@@ -253,6 +253,35 @@ public class GradebookCommands {
                     System.out.println(e + "\nTransaction Rollback Failed");
                 }
             }
+        }
+    }
+
+    // Shows the classes categories with weights and rescaled percentage
+    public void showAssignments() throws SQLException {
+        try {
+            int selectedClass = requireActiveClass();
+            try (PreparedStatement showAssignmentsStatement = connection.prepareStatement(
+                    "SELECT A.assignment_name, A.assignment_description, A.points, C.category_type, SUM(A.points) AS summed_points FROM assignments A JOIN categories C ON A.category_id = C.category_id WHERE A.class_id = ? GROUP BY C.category_type;"
+            )) {
+                showAssignmentsStatement.setInt(1, selectedClass);
+                ResultSet output = showAssignmentsStatement.executeQuery();
+
+                while (output.next()) {
+                    String name = output.getString("assignment_name");
+                    String description = output.getString("assignment_description");
+                    int points = output.getInt("points");
+                    int summedPoints = output.getInt("summed_points");
+                    String category = output.getString("category_type")
+
+                    String[] row = {name, description, String.valueOf(points), category, String.valueOf(summedPoints)};
+                    printRow(row);
+                }
+            } catch (SQLException e) {
+                System.err.println(e);
+                System.out.println("Failed to show class assignments");
+            }
+        } catch (IllegalStateException e) {
+            System.out.println(e);
         }
     }
 

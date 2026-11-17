@@ -150,7 +150,30 @@ public class GradebookCommands {
 
     // Adds a grading category.
     public void addCategory(List<String> args) throws SQLException {
-        throw new IllegalStateException("add-category not implemented yet.");
+        String type = args.get(0);
+        Integer weight = Integer.valueOf(args.get(1));
+
+        try (PreparedStatement newClassStatement = connection.prepareStatement(
+                "insert into categories (category_type, category_weight, class_id) values (?, ?, ?);"
+        )) {
+            connection.setAutoCommit(false);
+            newClassStatement.setString(1, type);
+            newClassStatement.setInt(2, weight);
+            newClassStatement.setInt(3, activeClassId);
+            newClassStatement.executeUpdate()
+            connection.commit()
+        } catch (SQLException e) {
+            System.err.println(e);
+            System.out.println("Failed to create new category. Make sure the category doesn't already exist for the class")
+            if (connection != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    connection.rollback();
+                } catch (SQLException excep) {
+                    System.out.println(e + "\nTransaction Rollback Failed");
+                }
+            }
+        }
     }
 
     // Adds an assignment.

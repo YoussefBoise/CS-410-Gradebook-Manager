@@ -186,7 +186,38 @@ public class GradebookCommands {
 
     // Adds an assignment.
     public void addAssignment(List<String> args) throws SQLException {
-        throw new IllegalStateException("add-assignment not implemented yet.");
+        String name = args.get(0);
+        Integer type = Integer.valueOf(args.get(1));
+        Integer points = Integer.valueOf(args.get(2));
+        if (points < 0) {
+            System.out.println("Assignment points must be non-negative");
+            return;
+        }
+        String description = args.get(3);
+
+        try (PreparedStatement newClassStatement = connection.prepareStatement(
+                "insert into assignments (assignment_name, assignment_description, points, class_id, category_id) values (?, ?, ?, ?, ?);"
+        )) {
+            connection.setAutoCommit(false);
+            newClassStatement.setString(1, name);
+            newClassStatement.setString(2, description);
+            newClassStatement.setInt(3, points);
+            newClassStatement.setInt(4, activeClassId);
+            newClassStatement.setInt(5, type);
+            newClassStatement.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            System.out.println(e);
+            System.out.println("Failed to create new assignment")
+            if (connection != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    connection.rollback();
+                } catch (SQLException excep) {
+                    System.out.println(e + "\nTransaction Rollback Failed");
+                }
+            }
+        }
     }
 
     // Creates or enrolls a student.

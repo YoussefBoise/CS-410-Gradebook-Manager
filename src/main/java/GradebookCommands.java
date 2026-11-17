@@ -165,14 +165,14 @@ public class GradebookCommands {
             return;
         }
 
-        try (PreparedStatement newClassStatement = connection.prepareStatement(
+        try (PreparedStatement newCategoryStatement = connection.prepareStatement(
                 "insert into categories (category_type, category_weight, class_id) values (?, ?, ?);"
         )) {
             connection.setAutoCommit(false);
-            newClassStatement.setString(1, type);
-            newClassStatement.setInt(2, weight);
-            newClassStatement.setInt(3, activeClassId);
-            newClassStatement.executeUpdate();
+            newCategoryStatement.setString(1, type);
+            newCategoryStatement.setInt(2, weight);
+            newCategoryStatement.setInt(3, activeClassId);
+            newCategoryStatement.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
             System.err.println(e);
@@ -199,16 +199,16 @@ public class GradebookCommands {
         }
         String description = args.get(3);
 
-        try (PreparedStatement newClassStatement = connection.prepareStatement(
+        try (PreparedStatement newAssignmentStatement = connection.prepareStatement(
                 "insert into assignments (assignment_name, assignment_description, points, class_id, category_id) values (?, ?, ?, ?, ?);"
         )) {
             connection.setAutoCommit(false);
-            newClassStatement.setString(1, name);
-            newClassStatement.setString(2, description);
-            newClassStatement.setInt(3, points);
-            newClassStatement.setInt(4, activeClassId);
-            newClassStatement.setInt(5, type);
-            newClassStatement.executeUpdate();
+            newAssignmentStatement.setString(1, name);
+            newAssignmentStatement.setString(2, description);
+            newAssignmentStatement.setInt(3, points);
+            newAssignmentStatement.setInt(4, activeClassId);
+            newAssignmentStatement.setInt(5, type);
+            newAssignmentStatement.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
             System.out.println(e);

@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS gradebook;
 USE gradebook;
 
 CREATE TABLE classes (
-    class_id INT PRIMARY KEY,
+    class_id INT PRIMARY KEY AUTO_INCREMENT,
     course_number VARCHAR(10) NOT NULL,
     term VARCHAR(5) NOT NULL,
     section_number INT NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE classes (
 );
 
 CREATE TABLE categories (
-    category_id INT PRIMARY KEY,
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
     category_type VARCHAR(20) NOT NULL,
     category_weight INT NOT NULL,
     class_id INT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE categories (
 );
 
 CREATE TABLE assignments (
-    assignment_id INT PRIMARY KEY,
+    assignment_id INT PRIMARY KEY AUTO_INCREMENT,
     assignment_name VARCHAR(30) NOT NULL,
     assignment_description TEXT,
     points INT NOT NULL,
@@ -40,13 +40,13 @@ CREATE TABLE assignments (
 );
 
 CREATE TABLE students (
-    student_id INT PRIMARY KEY,
+    student_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     student_name VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE enrollment (
-    enrollment_id INT PRIMARY KEY,
+    enrollment_id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
     class_id INT NOT NULL,
 
@@ -60,7 +60,7 @@ CREATE TABLE enrollment (
 );
 
 CREATE TABLE grades (
-    grade_id INT PRIMARY KEY,
+    grade_id INT PRIMARY KEY AUTO_INCREMENT,
     enrollment_id INT NOT NULL,
     assignment_id INT NOT NULL,
     assignment_grade DECIMAL,

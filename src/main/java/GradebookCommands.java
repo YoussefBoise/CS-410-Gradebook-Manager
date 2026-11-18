@@ -78,58 +78,51 @@ public class GradebookCommands {
         }
     }
 
-    // Selects the active class.
     public void selectClass(List<String> args) throws SQLException {
         String courseName = args.get(0);
         String term = null;
         String section = null;
+
         try { term = args.get(1); } catch (IndexOutOfBoundsException e) {}
         try { section = args.get(2); } catch (IndexOutOfBoundsException e) {}
 
         try (PreparedStatement selectClassStatement = connection.prepareStatement(
-                "SELECT class_id, course_number, term, section_number FROM classes WHERE course_name = ???"
+                // Fixed the column name and made term and section optional.
+                "SELECT class_id, course_number, term, section_number " +
+                        "FROM classes WHERE course_number = ? " +
+                        "AND term = COALESCE(?, term) " +
+                        "AND section_number = COALESCE(?, section_number)"
         )) {
-            connection.setAutoCommit(false);
             selectClassStatement.setString(1, courseName);
-            if (term != null) {
-                selectClassStatement.setString(2, ", term = " + term);
-            } else {
-                selectClassStatement.setString(2, "");
-            }
-            if (section != null) {
-                selectClassStatement.setString(3, ", section_number = " + section);
-            } else {
-                selectClassStatement.setString(3, "");
-            }
-            ResultSet output = selectClassStatement.executeQuery();
-            if (output.last()) {
-                if (output.getRow() > 1) {
-                    System.out.println("Failed to select class. Multiple classes match the given criteria:");
-                    output.first();
-                    // Print output
-                    while(output.next()){
-                        String outCourseNumber = output.getString("course_number");
-                        String outTerm = output.getString("term");
-                        String outSection = output.getString("section_number");
 
-                        String[] row = {outCourseNumber, outTerm, outSection};
-                        printRow(row);
-                    }
-                } else {
-                    activeClassId = output.getInt("class_id");
-                }
+            // Use the term if one was entered.
+            selectClassStatement.setString(2, term);
+
+            // Use the section if one was entered.
+            if (section != null) {
+                selectClassStatement.setInt(3, Integer.parseInt(section));
+            } else {
+                selectClassStatement.setNull(3, java.sql.Types.INTEGER);
             }
-            connection.commit();
-        } catch (SQLException e) {
-            System.err.println(e);
-            System.out.println("Failed to list classes");
-            if (connection != null) {
-                try {
-                    System.err.print("Transaction is being rolled back");
-                    connection.rollback();
-                } catch (SQLException excep) {
-                    System.out.println(e + "\nTransaction Rollback Failed");
+
+            try (ResultSet output = selectClassStatement.executeQuery()) {
+
+                // Check if the class exists.
+                if (!output.next()) {
+                    throw new IllegalArgumentException("Class not found.");
                 }
+
+                int selectedId = output.getInt("class_id");
+
+                // Make sure only one class matches.
+                if (output.next()) {
+                    throw new IllegalArgumentException(
+                            "Multiple classes found. Specify term and section.");
+                }
+
+                // Save the selected class.
+                activeClassId = selectedId;
+                System.out.println("Class selected successfully.");
             }
         }
     }
@@ -139,10 +132,21 @@ public class GradebookCommands {
         try {
             int selectedClass = requireActiveClass();
             try (PreparedStatement showClassStatement = connection.prepareStatement(
-                    "SELECT C.course_number, C.term, C.section_number, COUNT(E.class_id) AS num_students FROM classes C LEFT JOIN enrollment E ON C.class_id = E.class_id WHERE C.class_id = ?;"
+                    // Get the selected class and count its enrolled students.
+                    "SELECT C.course_number, C.term, C.section_number, " +
+                            "COUNT(E.class_id) AS num_students " +
+                            "FROM classes C " +
+                            "LEFT JOIN enrollment E ON C.class_id = E.class_id " +
+                            "WHERE C.class_id = ? " +
+                            "GROUP BY C.class_id"
             )) {
                 showClassStatement.setInt(1, selectedClass);
                 ResultSet output = showClassStatement.executeQuery();
+
+                // Move to the first result before reading the class information.
+                if (!output.next()) {
+                    throw new SQLException("Selected class not found.");
+                }
 
                 String courseNumber = output.getString("course_number");
                 String term = output.getString("term");
@@ -162,11 +166,14 @@ public class GradebookCommands {
 
     // Adds a grading category.
     public void addCategory(List<String> args) throws SQLException {
+        // Make sure a class is selected before adding a category.
+        int selectedClass = requireActiveClass();
         String type = args.get(0);
         Integer weight = Integer.valueOf(args.get(1));
-        if (weight < 0) {
-            System.out.println("Category weight must be non-negative");
-            return;
+        // Categories need a weight greater than zero.
+        if (weight <= 0) {
+            throw new IllegalArgumentException(
+                    "Category weight must be greater than zero.");
         }
 
         try (PreparedStatement newCategoryStatement = connection.prepareStatement(
@@ -175,7 +182,7 @@ public class GradebookCommands {
             connection.setAutoCommit(false);
             newCategoryStatement.setString(1, type);
             newCategoryStatement.setInt(2, weight);
-            newCategoryStatement.setInt(3, activeClassId);
+            newCategoryStatement.setInt(3, selectedClass); // currently selected class not active
             newCategoryStatement.executeUpdate();
             connection.commit();
         } catch (SQLException e) {
